@@ -13,3 +13,8 @@ data/*.xls
 data/*.csv
 *.pdf
 data/*.pdf
+/data
+data/*
+data/*.rds
+/test_code.R
+test_code.R

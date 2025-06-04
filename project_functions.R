@@ -65,6 +65,17 @@ vote_by_item <- function(x) {
     ungroup()
 }
 
+item_by_vote <- function(x) {
+  anes_2024_weighted_trust %>%
+    filter(!is.na({{ x }})) %>%
+    filter(!voted_president_2024 == "Other") %>%
+    group_by(voted_president_2024) %>%
+    srvyr::survey_count({{ x }}, vartype = c("se", "cv")) %>%
+    mutate(pct = n / sum(n)) %>%
+    select(voted_president_2024, {{ x }}, pct, everything()) %>%
+    ungroup()
+}
+
 # for two items
 vote_by_item2 <- function(x, y) {
   anes_2024_weighted_trust %>%
@@ -77,7 +88,7 @@ vote_by_item2 <- function(x, y) {
 }
 
 
-# plot function
+# plot functions
 plot_vote_item <- function(df, item) {
 
   vlines_df <- data.frame(xintercept = seq(-100, 100, 20))
@@ -127,3 +138,37 @@ plot_vote_item <- function(df, item) {
 
 }
 
+plot_item_vote <- function(df, item) {
+
+  df %>%
+    mutate(pct2 = round(pct * 100, 0)) %>%
+    filter(!voted_president_2024 == "Other") %>%
+    {. ->> tmp} %>%
+    ggplot(aes(x = pct, y = voted_president_2024, fill = {{ item }})) +
+    geom_bar(stat = "identity") +
+    scale_fill_brewer(palette = "Set3") +
+    geom_text(data = subset(tmp, pct > .05),
+      aes(label = scales::percent(round(pct , 2))),
+      position = position_stack(vjust = 0.5),
+      color= "grey40", vjust = 0.5, size = 8) +
+    scale_x_continuous(expand = c(0,0),
+      breaks = c(0, 1),
+      labels = c("0", "100%")) +
+    scale_y_discrete(expand = c(0,0)) +
+    labs(x = "", y = "") +
+    theme_minimal() +
+    theme(panel.grid = element_blank(),
+      plot.title = element_markdown(size = 16, lineheight = 1.25),
+      plot.subtitle = element_markdown(size = 12, lineheight = 1.25),
+      plot.caption = element_markdown(),
+      legend.position = "bottom", legend.spacing.x = unit(0, 'cm'),
+      legend.key.width = unit(4, 'cm'), legend.margin=margin(-10, 0, 0, 0),
+      legend.text = element_text(size = 12), legend.title = element_text(size = 16),
+      # legend.position = "bottom", legend.justification = "left",
+      # legend.title = element_text(size = 8),
+      # legend.text = element_text(size = 8),
+      axis.text.y = element_text(size = 10)) +
+    guides(fill = guide_legend(label.position = "bottom",
+      reverse = TRUE, direction = "horizontal",
+      nrow = 1, title = "", title.position = "left"))
+}
